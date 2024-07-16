@@ -1,0 +1,51 @@
+// routes/index.js
+
+const express = require('express');
+const router = express.Router();
+const axios = require('axios');
+
+router.get('/', (req, res) => {
+    res.render('index');
+});
+
+router.post('/create-charge', async (req, res) => {
+    const { name, description, amount, currency } = req.body;
+    const chargeData = {
+        name,
+        description,
+        local_price: {
+            amount,
+            currency
+        },
+        pricing_type: 'fixed_price',
+        metadata: {
+            customer_id: 'id_1005',
+            customer_name: 'Satoshi Nakamoto'
+        }
+    };
+
+    try {
+        const response = await axios.post('https://api.commerce.coinbase.com/charges', chargeData, {
+            headers: {
+                'X-CC-Api-Key': process.env.COINBASE_API_KEY,
+                'X-CC-Version': '2018-03-22'
+            }
+        });
+
+        const charge = response.data.data;
+        res.redirect(charge.hosted_url);
+    } catch (error) {
+        console.error('Error creating charge:', error.message);
+        res.status(500).json({ error: 'Error creating charge' });
+    }
+});
+
+router.get('/success', (req, res) => {
+    res.render('success');
+});
+
+router.get('/cancel', (req, res) => {
+    res.render('cancel');
+});
+
+module.exports = router;
